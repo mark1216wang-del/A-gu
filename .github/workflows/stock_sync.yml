@@ -25,10 +25,24 @@ jobs:
           FEISHU_WEBHOOK: ${{ secrets.FEISHU_WEBHOOK }}
         run: python stock_report.py
 
-      - name: Commit and Push to Obsidian Repo
+     - name: Commit and Push to Obsidian Repo
         run: |
           git config --global user.name "StockBot"
           git config --global user.email "bot@github.com"
+          
+          # 检查目录是否存在，不存在则报错提醒
+          if [ ! -d "Stocks" ]; then
+            echo "Error: Stocks directory not found!"
+            exit 1
+          fi
+          
+          # 强制添加所有 Stocks 目录下的 md 文件
           git add Stocks/*.md
-          git commit -m "Auto-update stock report: $(date +'%Y-%m-%d')" || exit 0
-          git push
+          
+          # 只有在有变化的情况下才 commit，防止没有新数据时报错
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Auto-update stock report: $(date +'%Y-%m-%d')"
+            git push
+          fi
